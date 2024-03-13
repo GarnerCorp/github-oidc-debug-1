@@ -1,0 +1,26 @@
+name: oidc
+
+permissions:
+  id-token: write
+
+on:
+  push:
+
+jobs:
+  Get_OIDC_ID_token:
+    runs-on: ubuntu-latest
+    steps:
+    - id: 'auth'
+      name: 'Authenticate to GCP'
+      uses: 'google-github-actions/auth@v2'
+      with:
+          workload_identity_provider: 'projects/552057127791/locations/global/workloadIdentityPools/github/providers/github'
+          service_account: 'container-builder@helical-crowbar-220917.iam.gserviceaccount.com'
+    - name: docker
+      run: |
+        gcloud auth login --brief --cred-file="${{ steps.auth.outputs.credentials_file_path }}"
+        gcloud auth list
+        gcloud auth configure-docker
+        now=$(date +%s)
+        image=gcr.io/helical-crowbar-220917/alpine-test:$now
+        docker pull library/alpine && docker tag library/alpine $image && docker push $image
